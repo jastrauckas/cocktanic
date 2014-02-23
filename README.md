@@ -1,4 +1,4 @@
-cockflu
+cocktanic
 =======
 
 Kaggle machine learning project
