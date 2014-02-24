@@ -14,25 +14,15 @@ def mapCategoriesToInts(feat_vector):
 		feat_vector[i] = categories.index(c)
 	return feat_vector
 
-def main():
-	train_filename = "train.csv"
-	with open(train_filename) as csvfile:
-		rows = []
-		reader = csv.reader(csvfile)
-		for line in reader:
-			rows.append(line)
-	print "%d rows in %s" % (len(rows), train_filename)
-	data = np.array(rows)
-	headers = data[0,:]
-	data = data[1:,:]
-
-	split_row = 700
-	label_train = data[:split_row,1]
-	label_test = data[split_row:,1]
-
-	# indices, as in the train.csv file
-	categorical_col_indices = [4,11]
-	numerical_col_indices = [2,5,6,7]
+'''
+takes in the header of a file and a matrix of data
+returns a feature matrix
+'''
+def getFeatures(header,data):
+	categorical_col_fields = ["Sex","Embarked"]	#[4,11]
+	numerical_col_fields = ["Pclass","Age","SibSp","Parch"]	# [2,5,6,7]
+	categorical_col_indices = map(lambda x: header.index(x), categorical_col_fields)
+	numerical_col_indices = map(lambda x: header.index(x), numerical_col_fields)
 
 	feats = data[:,numerical_col_indices]
 	for r in range(feats.shape[0]):
@@ -47,12 +37,38 @@ def main():
 		int_vector = int_vector.reshape((num_feats,1))
 		feats = np.hstack((feats, int_vector))
 
-	print feats
+	return feats
 
+'''
+takes in a filename
+returns a 2D list with the contents of the file
+'''
+def readCSV(filename):
+	with open(filename) as csvfile:
+		rows = []
+		reader = csv.reader(csvfile)
+		for line in reader:
+			rows.append(line)
+	print "%d rows in %s" % (len(rows), filename)
+	return rows
+
+def main():
+	train_filename = "train.csv"
+	train_rows = readCSV(train_filename)
+
+	data = np.array(train_rows)
+	header = list(data[0,:])
+	data = data[1:,:]
+
+	split_row = 700
+	label_train = data[:split_row,1]
+	label_test = data[split_row:,1]
+
+	feats = getFeatures(header,data)
 	feats_train = feats[:split_row,:]
 	feats_test = feats[split_row:,:]
 
-	clf = svm.SVC()
+	clf = svm.SVC(kernel="rbf")
 	clf.fit(feats_train,label_train)
 	print feats_test.shape
 	print label_test.shape
