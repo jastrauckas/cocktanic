@@ -4,17 +4,25 @@ from sklearn import svm
 import csv
 
 
+'''
+takes in a feature vector with categorical entries
+returns a vector with an integer mapping of the features
+'''
+def mapCategoriesToInts(feat_vector):
+	categories = list(set(feat_vector))
+	for i,c in enumerate(feat_vector):
+		feat_vector[i] = categories.index(c)
+	return feat_vector
 
 def main():
-	with open("train.csv") as csvfile:
+	train_filename = "train.csv"
+	with open(train_filename) as csvfile:
 		rows = []
 		reader = csv.reader(csvfile)
 		for line in reader:
-			#print line
 			rows.append(line)
-	print len(rows)
+	print "%d rows in %s" % (len(rows), train_filename)
 	data = np.array(rows)
-	#print data.shape
 	headers = data[0,:]
 	data = data[1:,:]
 
@@ -22,19 +30,24 @@ def main():
 	label_train = data[:split_row,1]
 	label_test = data[split_row:,1]
 
-	feats = data[:,2:]	
-	# consolidate numeric columns and then remove the rest
-	# I feel certain there is a more elegant way to do this
-	feats[:,2] = feats[:,0]
-	feats[:,6] = feats[:,7]
-	feats = feats[:,2:6]
+	# indices, as in the train.csv file
+	categorical_col_indices = [4,11]
+	numerical_col_indices = [2,5,6,7]
+
+	feats = data[:,numerical_col_indices]
 	for r in range(feats.shape[0]):
 		for c in range(feats.shape[1]):
 			if feats[r,c] == '':
 				feats[r,c] = -1
 
-	print feats
+	num_feats = feats.shape[0]
+	for col in categorical_col_indices:
+		int_vector = mapCategoriesToInts(data[:,col])
+		# reshape the vector to be able to concatenate it
+		int_vector = int_vector.reshape((num_feats,1))
+		feats = np.hstack((feats, int_vector))
 
+	print feats
 
 	feats_train = feats[:split_row,:]
 	feats_test = feats[split_row:,:]
