@@ -1,8 +1,9 @@
 import numpy as np
 import scipy
-from sklearn import svm
+from sklearn import svm, cross_validation, tree
 import csv
-
+from sklearn.externals.six import StringIO
+import pydot
 
 '''
 takes in a feature vector with categorical entries
@@ -19,8 +20,8 @@ takes in the header of a file and a matrix of data
 returns a feature matrix
 '''
 def getFeatures(header,data):
-	categorical_col_fields = ["Sex","Embarked"]	#[4,11]
-	numerical_col_fields = ["Pclass","Age","SibSp","Parch"]	# [2,5,6,7]
+	categorical_col_fields = ["Sex"] #,"Embarked"]	#[4,11]
+	numerical_col_fields = ["Pclass"] #,"Age","SibSp","Parch"]	# [2,5,6,7]
 	categorical_col_indices = map(lambda x: header.index(x), categorical_col_fields)
 	numerical_col_indices = map(lambda x: header.index(x), numerical_col_fields)
 
@@ -57,34 +58,40 @@ def readCSV(filename):
 takes in the training features and the training labels
 prints out the performance accuracy
 '''
-def testOnTraining(feats,labels):
-	split_row = int(feats.shape[0]*.8)
+def testOnTraining(X,y,classifier='tree'):
+	n = X.shape[0]
+	kf = cross_validation.KFold(n, n_folds=20)
 
-	feats_train = feats[:split_row,:]
-	feats_test = feats[split_row:,:]
-	label_train = labels[:split_row]
-	label_test = labels[split_row:]
+	if classifier == 'svm':
+		clf = svm.SVC(kernel="rbf")
+	elif classifier == 'tree':
+		clf = tree.DecisionTreeClassifier()
+	accuracies = []
+	for train_index, test_index in kf:
+		X_train, X_test = X[train_index], X[test_index]
+		y_train, y_test = y[train_index], y[test_index]
 
-	clf = svm.SVC(kernel="rbf")
-	clf.fit(feats_train,label_train)
-	print "%d training rows, %d features" % (feats_train.shape)
-	print "%d testing rows" % label_test.shape
-	results = clf.score(feats_test,label_test)
-	print "%f performance accuracy" % results
+		clf.fit(X_train,y_train)
+		accuracies.append( clf.score(X_test,y_test) )
+
+
+	ave_accuracy = sum(accuracies)/len(accuracies)
+	print "%f performance accuracy" % ave_accuracy
 
 
 '''
 write out a file with the predicted labels of the test set
 '''
-def createPredictions(feats_train,label_train,feats_test):
+def createPredictions(feats_train,label_train,feats_test,pid_col):
 	clf = svm.SVC(kernel="rbf")
 	clf.fit(feats_train,label_train)
 	predictions = clf.predict(feats_test)
 	filename = "cocktanic_submission.csv"
 	with open(filename,"wb") as csvfile:
 		writer = csv.writer(csvfile)
-		for p in predictions:
-			writer.writerow(p)
+		writer.writerow(["PassengerId","Survived"])
+		for pred,pid in zip(predictions,pid_col):
+			writer.writerow([pid,0])
 		
 
 def main():
@@ -109,10 +116,11 @@ def main():
 	header_test = list(data_test[0,:])
 	data_test = data_test[1:,:]
 
+	pid_col = data_test[:,0]
 	label_test = data_test[:,1]
 	feats_test = getFeatures(header_test,data_test)
 	
-	createPredictions(feats,label_train,feats_test)
+	createPredictions(feats,label_train,feats_test,pid_col)
 
 
 if __name__=='__main__':
