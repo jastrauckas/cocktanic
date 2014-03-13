@@ -2,8 +2,9 @@ import numpy as np
 import scipy
 from sklearn import svm, cross_validation, tree
 import csv
-from sklearn.externals.six import StringIO
+import StringIO
 import pydot
+#from sklearn.externals.six import StringIO
 
 '''
 takes in a feature vector with categorical entries
@@ -16,12 +17,27 @@ def mapCategoriesToInts(feat_vector):
 	return feat_vector
 
 '''
+takes in a vector of the names of the passengers
+returns a vector with just their titles (ex: Mrs, Sir)
+'''
+def getTitle(name_vec):
+	titles = []
+	for i,name in enumerate(name_vec):
+		after_comma = name.split(",")[1]
+		name_vec[i] = after_comma.split(".")[0]
+	return mapCategoriesToInts(name_vec)
+
+'''
+'''
+#def getSection():
+
+'''
 takes in the header of a file and a matrix of data
 returns a feature matrix
 '''
 def getFeatures(header,data):
-	categorical_col_fields = ["Sex"] #,"Embarked"]	#[4,11]
-	numerical_col_fields = ["Pclass"] #,"Age","SibSp","Parch"]	# [2,5,6,7]
+	categorical_col_fields = ["Sex", "Embarked"]	#[4,11]
+	numerical_col_fields = ["Pclass", "Age","SibSp","Parch"]	# [2,5,6,7]
 	categorical_col_indices = map(lambda x: header.index(x), categorical_col_fields)
 	numerical_col_indices = map(lambda x: header.index(x), numerical_col_fields)
 
@@ -38,6 +54,11 @@ def getFeatures(header,data):
 		int_vector = int_vector.reshape((num_feats,1))
 		feats = np.hstack((feats, int_vector))
 
+	name_index = header.index('Name')
+	name_vector = data[:,name_index]
+	title_vector = getTitle(name_vector)
+	title_vector = title_vector.reshape((num_feats,1))
+	feats = np.hstack((feats,title_vector))
 	return feats
 
 '''
@@ -77,6 +98,17 @@ def testOnTraining(X,y,classifier='tree'):
 
 	ave_accuracy = sum(accuracies)/len(accuracies)
 	print "%f performance accuracy" % ave_accuracy
+
+	if classifier == 'tree':
+		"""
+		dot_data = StringIO.StringIO() 
+		tree.export_graphviz(clf, out_file=dot_data) 
+		graph = pydot.graph_from_dot_data(dot_data.getvalue()) 
+		graph.write_pdf("cocktanic.pdf") 
+		"""
+		dotfile = open("cocktanic.dot", 'w')
+		dotfile = tree.export_graphviz(clf, out_file = dotfile)
+		dotfile.close()
 
 
 '''
