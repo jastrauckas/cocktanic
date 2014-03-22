@@ -36,8 +36,8 @@ takes in the header of a file and a matrix of data
 returns a feature matrix
 '''
 def getFeatures(header,data):
-	categorical_col_fields = ["Sex", "Embarked"]	#[4,11]
-	numerical_col_fields = ["Pclass", "Age","SibSp","Parch"]	# [2,5,6,7]
+	categorical_col_fields = ["Sex", "Embarked"]
+	numerical_col_fields = ["Pclass", "Age","SibSp","Parch"]
 	categorical_col_indices = map(lambda x: header.index(x), categorical_col_fields)
 	numerical_col_indices = map(lambda x: header.index(x), numerical_col_fields)
 
@@ -66,7 +66,7 @@ takes in a filename
 returns a 2D list with the contents of the file
 '''
 def readCSV(filename):
-	with open(filename) as csvfile:
+	with open(filename,"rU") as csvfile:
 		rows = []
 		reader = csv.reader(csvfile)
 		for line in reader:
@@ -124,7 +124,18 @@ def createPredictions(feats_train,label_train,feats_test,pid_col):
 		writer.writerow(["PassengerId","Survived"])
 		for pred,pid in zip(predictions,pid_col):
 			writer.writerow([pid,0])
-		
+
+
+def survivalRateByFeature(data,header,feature):
+	feature_index = header.index(feature)
+	print feature_index
+	categories = list(set(data[:,feature_index]))
+	print categories
+	for cat in categories:
+		print cat
+		rows = data[data[:,feature_index] == cat]
+		rows = np.array(rows[:,1]).astype(np.float)
+		print np.mean(rows)
 
 def main():
 	# get a predicted accuracy
@@ -135,6 +146,10 @@ def main():
 	header = list(data[0,:])
 	data = data[1:,:]
 
+	feature = 'Embarked'
+	survivalRateByFeature(data,header,feature)
+
+	'''
 	label_train = data[:,1]
 
 	feats = getFeatures(header,data)
@@ -153,6 +168,7 @@ def main():
 	feats_test = getFeatures(header_test,data_test)
 	
 	createPredictions(feats,label_train,feats_test,pid_col)
+	'''
 
 
 if __name__=='__main__':
