@@ -79,12 +79,13 @@ def readCSV(filename):
 takes in the training features and the training labels
 prints out the performance accuracy
 '''
-def testOnTraining(X,y,classifier='tree'):
+def testOnTraining(X,y,classifier='tree',C=1):
 	n = X.shape[0]
 	kf = cross_validation.KFold(n, n_folds=20)
 
 	if classifier == 'svm':
-		clf = svm.SVC(C=0.8, kernel="rbf", tol=0.01)
+		clf = svm.SVC(C=C, kernel="rbf", tol=0.01)
+		print "C: %f" % C
 	elif classifier == 'tree':
 		clf = tree.DecisionTreeClassifier()
 	accuracies = []
@@ -152,7 +153,9 @@ def main():
 	label_train = data[:,1]
 
 	feats = getFeatures(header,data)
-	testOnTraining(feats,label_train)
+	for C in [1.5**x for x in range(-2,6)]:
+		testOnTraining(feats,label_train, 'svm', C)
+
 
 	# generate predictions on test data
 	test_filename = "test.csv"
