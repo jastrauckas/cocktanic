@@ -116,7 +116,8 @@ def testOnTraining(X,y,classifier='tree',C=1):
 write out a file with the predicted labels of the test set
 '''
 def createPredictions(feats_train,label_train,feats_test,pid_col):
-	clf = svm.SVC(C=0.5, kernel="rbf")
+	# value of C chosen by careful scientific evaluation
+	clf = svm.SVC(C=7, kernel="rbf")
 	clf.fit(feats_train,label_train)
 	predictions = clf.predict(feats_test)
 	filename = "cocktanic_submission.csv"
