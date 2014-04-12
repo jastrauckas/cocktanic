@@ -37,7 +37,7 @@ returns a feature matrix
 '''
 def getFeatures(header,data):
 	categorical_col_fields = ["Sex"] #, "Embarked"]
-	numerical_col_fields =  ["Pclass","Age","SibSp","Parch"]
+	numerical_col_fields =  ["Pclass","Age"] #,"SibSp","Parch"]
 	categorical_col_indices = map(lambda x: header.index(x), categorical_col_fields)
 	numerical_col_indices = map(lambda x: header.index(x), numerical_col_fields)
 
@@ -133,7 +133,7 @@ def createPredictions(feats_train,label_train,feats_test,pid_col,classifier):
 		writer = csv.writer(csvfile)
 		writer.writerow(["PassengerId","Survived"])
 		for pred,pid in zip(predictions,pid_col):
-			writer.writerow([pid,0])
+			writer.writerow([pid,pred])
 
 
 def survivalRateByFeature(data,header,feature):
