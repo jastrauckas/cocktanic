@@ -3,7 +3,7 @@ import scipy
 from sklearn import svm, cross_validation, tree
 import csv
 import StringIO
-import pydot
+#import pydot
 #from sklearn.externals.six import StringIO
 
 '''
@@ -36,8 +36,8 @@ takes in the header of a file and a matrix of data
 returns a feature matrix
 '''
 def getFeatures(header,data):
-	categorical_col_fields = ["Sex", "Embarked"]
-	numerical_col_fields = ["Pclass", "Age","SibSp","Parch"]
+	categorical_col_fields = ["Sex"] #, "Embarked"]
+	numerical_col_fields =  ["Pclass","Age","SibSp","Parch"]
 	categorical_col_indices = map(lambda x: header.index(x), categorical_col_fields)
 	numerical_col_indices = map(lambda x: header.index(x), numerical_col_fields)
 
@@ -79,15 +79,11 @@ def readCSV(filename):
 takes in the training features and the training labels
 prints out the performance accuracy
 '''
-def testOnTraining(X,y,classifier='tree',C=1):
+def testOnTraining(X,y,classifier,C=1):
 	n = X.shape[0]
 	kf = cross_validation.KFold(n, n_folds=20)
 
-	if classifier == 'svm':
-		clf = svm.SVC(C=C, kernel="rbf", tol=0.01)
-		print "C: %f" % C
-	elif classifier == 'tree':
-		clf = tree.DecisionTreeClassifier()
+	clf = makeClassifier(classifier)
 	accuracies = []
 	for train_index, test_index in kf:
 		X_train, X_test = X[train_index], X[test_index]
@@ -100,24 +96,36 @@ def testOnTraining(X,y,classifier='tree',C=1):
 	ave_accuracy = sum(accuracies)/len(accuracies)
 	print "%f performance accuracy" % ave_accuracy
 
-	if classifier == 'tree':
+
+
+'''
+classifier options are svm or tree
+'''
+def makeClassifier(classifier,C=7):
+	# value of C chosen by careful scientific evaluation
+	if classifier == 'svm':
+		print "C: %f" % C
+		clf = svm.SVC(C=C, kernel="rbf",tol=0.01)
+	elif classifier == 'tree':
+		clf = tree.DecisionTreeClassifier()
 		"""
 		dot_data = StringIO.StringIO() 
 		tree.export_graphviz(clf, out_file=dot_data) 
 		graph = pydot.graph_from_dot_data(dot_data.getvalue()) 
 		graph.write_pdf("cocktanic.pdf") 
-		"""
+		
 		dotfile = open("cocktanic.dot", 'w')
 		dotfile = tree.export_graphviz(clf, out_file = dotfile)
 		dotfile.close()
+		"""
+	return clf
 
 
 '''
 write out a file with the predicted labels of the test set
 '''
-def createPredictions(feats_train,label_train,feats_test,pid_col):
-	# value of C chosen by careful scientific evaluation
-	clf = svm.SVC(C=7, kernel="rbf")
+def createPredictions(feats_train,label_train,feats_test,pid_col,classifier):
+	clf = makeClassifier(classifier)
 	clf.fit(feats_train,label_train)
 	predictions = clf.predict(feats_test)
 	filename = "cocktanic_submission.csv"
@@ -137,10 +145,12 @@ def survivalRateByFeature(data,header,feature):
 		print cat
 		rows = data[data[:,feature_index] == cat]
 		rows = np.array(rows[:,1]).astype(np.float)
+		print len(rows)
 		print np.mean(rows)
 
 def main():
 	# get a predicted accuracy
+	classifier = 'svm'
 	train_filename = "train.csv"
 	train_rows = readCSV(train_filename)
 
@@ -148,14 +158,14 @@ def main():
 	header = list(data[0,:])
 	data = data[1:,:]
 
-	feature = 'Embarked'
-	survivalRateByFeature(data,header,feature)
+	feature = 'Sex'
+	#survivalRateByFeature(data,header,feature)
 
 	label_train = data[:,1]
 
 	feats = getFeatures(header,data)
-	for C in [1.5**x for x in range(-2,6)]:
-		testOnTraining(feats,label_train, 'svm', C)
+	#for C in [1.5**x for x in range(-2,6)]:
+	testOnTraining(feats,label_train, classifier=classifier, C=7)
 
 
 	# generate predictions on test data
@@ -170,7 +180,7 @@ def main():
 	label_test = data_test[:,1]
 	feats_test = getFeatures(header_test,data_test)
 	
-	createPredictions(feats,label_train,feats_test,pid_col)
+	createPredictions(feats,label_train,feats_test,pid_col,classifier=classifier)
 
 
 if __name__=='__main__':
