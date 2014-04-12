@@ -84,7 +84,7 @@ def testOnTraining(X,y,classifier='tree'):
 	kf = cross_validation.KFold(n, n_folds=20)
 
 	if classifier == 'svm':
-		clf = svm.SVC(kernel="rbf")
+		clf = svm.SVC(C=0.8, kernel="rbf", tol=0.01)
 	elif classifier == 'tree':
 		clf = tree.DecisionTreeClassifier()
 	accuracies = []
@@ -115,7 +115,7 @@ def testOnTraining(X,y,classifier='tree'):
 write out a file with the predicted labels of the test set
 '''
 def createPredictions(feats_train,label_train,feats_test,pid_col):
-	clf = svm.SVC(kernel="rbf")
+	clf = svm.SVC(C=0.5, kernel="rbf")
 	clf.fit(feats_train,label_train)
 	predictions = clf.predict(feats_test)
 	filename = "cocktanic_submission.csv"
@@ -149,7 +149,6 @@ def main():
 	feature = 'Embarked'
 	survivalRateByFeature(data,header,feature)
 
-	'''
 	label_train = data[:,1]
 
 	feats = getFeatures(header,data)
@@ -168,7 +167,6 @@ def main():
 	feats_test = getFeatures(header_test,data_test)
 	
 	createPredictions(feats,label_train,feats_test,pid_col)
-	'''
 
 
 if __name__=='__main__':
